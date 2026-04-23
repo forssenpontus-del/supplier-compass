@@ -1,16 +1,56 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect, useState } from "react";
+import { Hero } from "@/components/Hero";
+import { Quiz } from "@/components/Quiz";
+import { Scanning } from "@/components/Scanning";
+import { Results } from "@/components/Results";
+import { HowItWorks } from "@/components/HowItWorks";
+import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import type { Answers } from "@/data/quiz";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+type Stage = "intro" | "quiz" | "scanning" | "results";
+
+const Index = () => {
+  const [stage, setStage] = useState<Stage>("intro");
+  const [answers, setAnswers] = useState<Answers>({});
+
+  useEffect(() => {
+    if (stage !== "intro") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [stage]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen">
+      <SiteHeader />
+
+      <main>
+        {stage === "intro" && (
+          <>
+            <Hero onStart={() => setStage("quiz")} />
+            <HowItWorks />
+          </>
+        )}
+
+        {stage === "quiz" && (
+          <Quiz
+            onComplete={(a) => {
+              setAnswers(a);
+              setStage("scanning");
+            }}
+            onBack={() => setStage("intro")}
+          />
+        )}
+
+        {stage === "scanning" && <Scanning onDone={() => setStage("results")} />}
+
+        {stage === "results" && (
+          <Results answers={answers} onRestart={() => setStage("quiz")} />
+        )}
+      </main>
+
+      <SiteFooter />
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
