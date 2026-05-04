@@ -67,7 +67,7 @@ const Weights = () => {
         <Button variant="outline" onClick={reset} className="gap-2">
           <RotateCcw className="h-4 w-4" /> Återställ standard
         </Button>
-        <Link to="/">
+        <Link to="/dashboard">
           <Button className="gap-2 bg-primary text-primary-foreground">
             Se uppdaterad rankning <ArrowRight className="h-4 w-4" />
           </Button>

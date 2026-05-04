@@ -17,7 +17,7 @@ const VendorDetail = () => {
     return (
       <div className="container mx-auto px-6 py-16">
         <p className="text-muted-foreground">Leverantören hittades inte.</p>
-        <Link to="/" className="mt-4 inline-block text-primary-glow">
+        <Link to="/dashboard" className="mt-4 inline-block text-primary-glow">
           ← Tillbaka till översikt
         </Link>
       </div>
@@ -31,7 +31,7 @@ const VendorDetail = () => {
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
       <Link
-        to="/"
+        to="/dashboard"
         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground"
       >
         <ArrowLeft className="h-3 w-3" /> Översikt
