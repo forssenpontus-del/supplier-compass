@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Activity, BarChart3, SlidersHorizontal, BookOpen, Info } from "lucide-react";
+import { Activity, BarChart3, SlidersHorizontal, BookOpen, Info, ListChecks, Home } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Översikt", url: "/", icon: BarChart3 },
+  { title: "Start", url: "/", icon: Home },
+  { title: "Frågeformulär", url: "/quiz", icon: ListChecks },
+  { title: "Översikt", url: "/dashboard", icon: BarChart3 },
   { title: "Vikter", url: "/weights", icon: SlidersHorizontal },
   { title: "Metodik", url: "/methodology", icon: BookOpen },
   { title: "Om", url: "/about", icon: Info },
