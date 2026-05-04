@@ -1,66 +1,76 @@
-import type { Vendor } from "@/data/vendors";
-import type { Answers } from "@/data/quiz";
-import { quizQuestions } from "@/data/quiz";
+import {
+  vendors as allVendors,
+  componentKeys,
+  type ComponentKey,
+  type Vendor,
+  type RiskLevel,
+} from "@/data/vendors";
+
+export type Weights = Record<ComponentKey, number>;
+
+export const defaultWeights: Weights = {
+  dataLocation: 30,
+  securityLevel: 25,
+  incidentHandling: 20,
+  ownership: 25,
+};
+
+/** Normalize weights so they sum to 100 (for display + math safety). */
+export function normalizeWeights(w: Weights): Weights {
+  const sum = componentKeys.reduce((s, k) => s + (w[k] ?? 0), 0) || 1;
+  return componentKeys.reduce((acc, k) => {
+    acc[k] = (w[k] ?? 0) / sum;
+    return acc;
+  }, {} as Weights);
+}
+
+export interface ComponentContribution {
+  key: ComponentKey;
+  raw: number; // vendor's 0-100 score in this component
+  weight: number; // 0-1
+  contribution: number; // raw * weight (max ~100)
+}
 
 export interface VendorScore {
   vendor: Vendor;
-  score: number; // 0-100
-  breakdown: {
-    sovereignty: number;
-    gdpr: number;
-    nis2: number;
-    dora: number;
-  };
+  total: number; // 0-100
+  contributions: ComponentContribution[];
+  risk: RiskLevel;
+  euAligned: boolean;
 }
 
-export function computeWeights(answers: Answers) {
-  const totals = { sovereignty: 1, gdpr: 1, nis2: 1, dora: 1 };
-  quizQuestions.forEach((q) => {
-    const idx = answers[q.id];
-    if (idx === undefined) return;
-    const w = q.options[idx]?.weights ?? {};
-    (Object.keys(totals) as (keyof typeof totals)[]).forEach((k) => {
-      if (w[k] !== undefined) totals[k] *= w[k]!;
-    });
+export function scoreVendor(vendor: Vendor, weights: Weights): VendorScore {
+  const norm = normalizeWeights(weights);
+  const contributions: ComponentContribution[] = componentKeys.map((k) => {
+    const raw = vendor.components[k];
+    const weight = norm[k];
+    return { key: k, raw, weight, contribution: raw * weight };
   });
-  // Normalize so the four weights sum to 4 (avg 1)
-  const sum = totals.sovereignty + totals.gdpr + totals.nis2 + totals.dora;
-  const factor = 4 / sum;
-  return {
-    sovereignty: totals.sovereignty * factor,
-    gdpr: totals.gdpr * factor,
-    nis2: totals.nis2 * factor,
-    dora: totals.dora * factor,
-  };
+  const total = Math.round(contributions.reduce((s, c) => s + c.contribution, 0));
+  const risk = riskFromScore(total);
+  const euAligned =
+    vendor.jurisdiction === "EU" || vendor.jurisdiction === "EEA";
+  return { vendor, total, contributions, risk, euAligned };
 }
 
-export function scoreVendor(vendor: Vendor, weights: ReturnType<typeof computeWeights>): VendorScore {
-  const weighted =
-    vendor.sovereignty * weights.sovereignty +
-    vendor.gdpr * weights.gdpr +
-    vendor.nis2 * weights.nis2 +
-    vendor.dora * weights.dora;
-  const score = Math.round(weighted / 4);
-  return {
-    vendor,
-    score: Math.max(0, Math.min(100, score)),
-    breakdown: {
-      sovereignty: vendor.sovereignty,
-      gdpr: vendor.gdpr,
-      nis2: vendor.nis2,
-      dora: vendor.dora,
-    },
-  };
+export function rankVendors(weights: Weights, vendors: Vendor[] = allVendors): VendorScore[] {
+  return vendors.map((v) => scoreVendor(v, weights)).sort((a, b) => b.total - a.total);
 }
 
-export function rankVendors(vendors: Vendor[], answers: Answers): VendorScore[] {
-  const w = computeWeights(answers);
-  return vendors.map((v) => scoreVendor(v, w)).sort((a, b) => b.score - a.score);
+export function riskFromScore(score: number): RiskLevel {
+  if (score >= 75) return "Low";
+  if (score >= 55) return "Medium";
+  return "High";
 }
 
-export function scoreLabel(score: number): { label: string; tone: "success" | "warning" | "destructive" | "primary" } {
-  if (score >= 85) return { label: "Utmärkt match", tone: "success" };
-  if (score >= 65) return { label: "Stark match", tone: "primary" };
-  if (score >= 45) return { label: "Begränsad match", tone: "warning" };
-  return { label: "Hög risk", tone: "destructive" };
-}
+export const riskTone: Record<RiskLevel, "success" | "warning" | "destructive"> = {
+  Low: "success",
+  Medium: "warning",
+  High: "destructive",
+};
+
+export const riskLabel: Record<RiskLevel, string> = {
+  Low: "Risk: Låg",
+  Medium: "Risk: Medel",
+  High: "Risk: Hög",
+};
